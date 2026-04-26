@@ -18,7 +18,7 @@ Two protocols are provided:
 | File | Protocol | Transfer | Memory strategy | Instances |
 |---|---|---|---|---|
 | `experiment_forge_eval.yaml` | **FORGE** | `best` — champion broadcast | `rules` | 10 |
-| `experiment_reflexion_eval.yaml` | **Individual** (ablation) | `individual` — isolated | `mixed` | 20 |
+| `experiment_reflexion_eval.yaml` | **Reflexion** (individual) | `individual` — isolated | `mixed` | 20 |
 
 Each config covers **one experimental condition**. To run other memory representations (`rules`, `examples`, `mixed`) or other models, copy the relevant config and adjust `learning_strategy` and `model` accordingly.
 
@@ -114,7 +114,7 @@ Output is written to `experiments/<name>_<timestamp>/aggregated_logs/`:
 **FORGE** (`experiment_forge_eval.yaml`) — `transfer_strategy: "best"`, 10 instances per run.
 All 10 instances learn in parallel within each stage. At the end of each stage, the best-performing instance's memory is broadcast to all others (champion replacement). Instances that exceed the graduation threshold are frozen and excluded from further updates.
 
-**Individual / Ablation** (`experiment_reflexion_eval.yaml`) — `transfer_strategy: "individual"`, 20 instances per run.
+**Reflexion (individual)** (`experiment_reflexion_eval.yaml`) — `transfer_strategy: "individual"`, 20 instances per run.
 Each instance learns in complete isolation — no knowledge is shared between instances across stages. This is the no-broadcast ablation.
 
 ### Key fields
@@ -215,22 +215,48 @@ The learning agents (Reflector, Exemplifier) analyze failed trajectories and wri
 ## Output Structure
 
 ```
-experiments/forge_experiment_rules_20260426_120000/
-├── workspaces/
-│   ├── instance_0/
-│   │   ├── definitions/          # Snapshot of evolved memory at end of training
-│   │   └── logs/
-│   │       ├── runs/learning/    # Per-attempt learning logs
-│   │       └── runs/evaluating/  # Post-training evaluation logs
-│   ├── instance_1/
+<experiment_name>_<timestamp>/
+├── experiment_config.yaml             # Copy of the config used for this run
+├── incremental_summary.md             # Stage-by-stage champion/graduation overview
+├── stage_1/
+│   ├── workspaces/
+│   │   ├── instance_1/
+│   │   │   ├── definitions/           # Evolved memory snapshot at end of stage
+│   │   │   │   ├── planner/
+│   │   │   │   ├── analyst/
+│   │   │   │   ├── action_chooser/
+│   │   │   │   └── ...
+│   │   │   ├── definitions_initial/   # Memory snapshot before stage learning began
+│   │   │   │   └── ...
+│   │   │   ├── docker.log             # Raw Docker output for this instance
+│   │   │   └── logs/                  # (runtime logs, not tracked by git)
+│   │   └── instance_2/ ...
+│   └── aggregated_logs/
+│       ├── instance_1/
+│       │   ├── runs/learning/
+│       │   │   └── learning_session_<timestamp>/
+│       │   │       ├── attempt_1_<time>/
+│       │   │       ├── attempt_2_<time>/
+│       │   │       ├── <timestamp>_console_mirror.log
+│       │   │       ├── learning_metrics.json
+│       │   │       ├── results.json
+│       │   │       └── trajectories/
+│       │   └── connector/             # LLM token usage logs
+│       ├── instance_2/ ...
+│       └── summary.md                 # Per-instance results table for this stage
+├── stage_2/ ...
 │   └── ...
-└── aggregated_logs/
-    ├── instance_0/
-    ├── ...
-    ├── summary.md
-    ├── evaluation_report.md
-    └── incremental_summary.md
+└── final_evaluation/
+    ├── workspaces/
+    └── aggregated_logs/
+        ├── evaluation_report.md       # Per-instance evaluation reward table
+        ├── summary.md
+        └── instance_1/ ...
 ```
+
+---
+
+> **Data availability.** The complete episode logs collected for the paper (raw console logs, token usage, per-step reward traces, and evolved memory artifacts across all experiments and evaluated episodes) are not included in this repository due to size. They are available upon request from the authors.
 
 ---
 
