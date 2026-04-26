@@ -1,26 +1,42 @@
-# FORGE: Self-Evolving Agent Memory With No Weight Updates
-
-**FORGE** (Failure-Optimized Reflective Graduation and Evolution) is a staged, population-based protocol that evolves prompt-injected natural-language memory for hierarchical ReAct agents — with no gradient updates and no stronger teacher model.
-
-Agents improve decision-making across episodes by having a dedicated reflection agent analyze failed trajectories and produce reusable knowledge artifacts (rules, few-shot examples, or both). A champion-broadcast mechanism propagates the best-discovered memory across all parallel instances between stages.
+# FORGE — Artifact
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
+> **FORGE: Self-Evolving Agent Memory With No Weight Updates via Population Broadcast**
+
+This repository contains the full agent implementation, experiment runner, and YAML configuration files needed to run FORGE — a staged, population-based protocol that evolves prompt-injected natural-language memory for hierarchical ReAct agents, with no gradient updates and no stronger teacher model.
+
 ---
 
-## Repository Layout
+## Overview
+
+The system trains and evaluates a hierarchical ReAct agent defending a network in the **CybORG CAGE-2** environment. Agents improve decision-making across episodes by having a dedicated learning agent analyze failed trajectories and produce reusable knowledge artifacts. A champion-broadcast mechanism propagates the best-discovered memory across all parallel instances between stages.
+
+Two protocols are provided:
+
+| File | Protocol | Transfer | Memory strategy | Instances |
+|---|---|---|---|---|
+| `experiment_forge_eval.yaml` | **FORGE** | `best` — champion broadcast | `rules` | 10 |
+| `experiment_reflexion_eval.yaml` | **Individual** (ablation) | `individual` — isolated | `mixed` | 20 |
+
+Each config covers **one experimental condition**. To run other memory representations (`rules`, `examples`, `mixed`) or other models, copy the relevant config and adjust `learning_strategy` and `model` accordingly.
+
+---
+
+## Repository Structure
 
 ```
 forge-protocol/
-├── run_experiment.py              # Main entry point — orchestrates Docker workers
-├── experiment_forge_eval.yaml     # Example: FORGE protocol (best transfer, rules)
-├── experiment_reflexion_eval.yaml # Example: Ablation (individual transfer, mixed)
-├── container_requirements.txt     # Full Python dependency list (used by Docker)
-├── Dockerfile                     # Container image definition
-├── .env.template                  # Template for API keys — copy to .env
+├── run_experiment.py              # Experiment runner — orchestrates Docker workers
+├── experiment_forge_eval.yaml     # FORGE protocol config (best transfer, rules)
+├── experiment_reflexion_eval.yaml # Individual/ablation config (no broadcast, mixed)
+├── container_requirements.txt     # Python dependencies (used by Docker)
+├── Dockerfile                     # Container image — installs CybORG + dependencies
+├── .env.template                  # API key template — copy to .env
 ├── .gitignore
+├── LICENSE
 └── agent_base/                    # Agent code (mounted into Docker at runtime)
-    ├── run_cyborg_coordinator.py  # Per-instance runner (learning + evaluation)
+    ├── run_cyborg_coordinator.py  # Per-instance entry point (learning + evaluation)
     ├── agents/
     │   ├── planner.py             # Top-level Planner ReAct agent
     │   ├── analyst.py             # Analyst sub-agent (host state interpretation)
@@ -39,68 +55,58 @@ forge-protocol/
     │   └── online_learning_manager.py   # Online (async) learning mode
     ├── llm-connector/             # LLM provider abstraction (pre-initialized workspace)
     │   └── conf/                  # llm.yaml, logs.yaml, security.yaml
-    ├── utils/
-    │   ├── settings.py            # Provider/model defaults and parameters
-    │   └── learning_metrics.py    # Metrics tracking per attempt/stage
-    └── logs/                      # Runtime logs (generated, not tracked)
+    └── utils/
+        ├── settings.py            # Provider/model defaults and parameters
+        └── learning_metrics.py    # Metrics tracking per attempt/stage
 ```
 
 ---
 
 ## Prerequisites
 
-- **Docker** (tested with Docker 24+)
-- **Python 3.10+** (only needed to run `run_experiment.py` on the host; all agent code runs inside Docker)
-- An API key for at least one supported LLM provider (see [Providers](#providers))
+- **Docker** — the agent and CybORG run entirely inside the container.
+- **Python 3.10+** — only for `run_experiment.py` (the outer orchestrator); no packages beyond the standard library and `pyyaml`.
+- **API keys** — at least one LLM provider key in `.env`.
 
----
-
-## Quick Start
-
-### 1. Clone the repository
-
-```bash
-git clone <repo-url>
-cd forge-protocol
-```
-
-### 2. Configure your API key
+### `.env` setup
 
 ```bash
 cp .env.template .env
 ```
 
-Open `.env` and add your key for the provider you intend to use:
+Open `.env` and fill in your key(s):
 
 ```bash
-# For OpenRouter (recommended — access to all models via one key):
-OPENROUTER_API_KEY=sk-or-v1-...
-
-# For direct Google AI Studio access:
-GOOGLE_API_KEY=AIza...
+OPENROUTER_API_KEY=sk-or-v1-...   # recommended — single key, access to all models
+GOOGLE_API_KEY=AIza...             # for direct Google AI Studio access
 ```
 
-### 3. Build the Docker image
+---
+
+## Quick Start
+
+### 1. Build the Docker image
 
 ```bash
 docker build -t cyborg-agent:latest .
 ```
 
-This installs all Python dependencies and patches the CybORG CAGE-2 environment data files. Takes ~3–5 minutes on first build; subsequent builds are cached.
+Installs all Python dependencies and patches the CybORG CAGE-2 data files. Takes ~3–5 minutes on first build; subsequent builds are cached.
 
-### 4. Run an experiment
+### 2. Run an experiment
 
 ```bash
 python run_experiment.py experiment_forge_eval.yaml
 ```
 
-Experiment output appears in `experiments/<name>_<timestamp>/`.
+Output is written to `experiments/<name>_<timestamp>/aggregated_logs/`:
+- `evaluation_report.md` — per-instance reward table
+- `summary.md` — aggregate statistics
+- `incremental_summary.md` — stage-by-stage progress (FORGE mode)
 
 ---
 
 ## Experiment Configuration
-
-> **Note:** Each provided YAML covers a single experimental condition. To run other conditions, copy the relevant config and adjust `learning_strategy`, `model`, or `transfer_strategy` as needed.
 
 ### The two protocols
 
@@ -108,7 +114,7 @@ Experiment output appears in `experiments/<name>_<timestamp>/`.
 All 10 instances learn in parallel within each stage. At the end of each stage, the best-performing instance's memory is broadcast to all others (champion replacement). Instances that exceed the graduation threshold are frozen and excluded from further updates.
 
 **Individual / Ablation** (`experiment_reflexion_eval.yaml`) — `transfer_strategy: "individual"`, 20 instances per run.
-Each instance learns in complete isolation — no knowledge is shared between instances across stages. This serves as the no-broadcast ablation to measure the contribution of population-level transfer.
+Each instance learns in complete isolation — no knowledge is shared between instances across stages. This is the no-broadcast ablation.
 
 ### Key fields
 
@@ -135,22 +141,21 @@ agent_config:
   agents_to_improve: ["action_chooser", "analyst", "planner"]
   max_reflection_rules: 100      # Max rules stored per agent
   max_reflection_examples: 50    # Max examples stored per agent (examples/mixed only)
+
 num_evaluation_runs: 2           # Evaluation episodes run after training completes
 ```
-
-To run a different memory representation, set `learning_strategy` to `"examples"` or `"mixed"`. To run a different model, change `provider` and `model` (see [Switching models](#switching-models) below).
 
 ### Switching models
 
 Change `provider` and `model` in `agent_config`:
 
 ```yaml
-# OpenRouter (any supported model):
+# Via OpenRouter (single key, all models):
 provider: "openrouter"
+model: "google/gemini-2.5-flash-lite"
 model: "x-ai/grok-4-fast"
 model: "meta-llama/llama-4-maverick"
 model: "qwen/qwen3-235b-a22b-2507"
-model: "gemini-2.5-flash-lite"
 
 # Direct Google AI Studio:
 provider: "google"
@@ -163,7 +168,7 @@ model: "gemini-2.5-flash-lite"
 
 ### Granular reflector/exemplifier overrides (optional)
 
-To use a different model for the learning agents:
+To use a different (e.g. stronger) model for the learning agents only:
 
 ```yaml
 reflector_provider: "openrouter"
@@ -176,9 +181,9 @@ exemplifier_model: "google/gemini-2.5-pro"
 
 ## Providers
 
-API keys are read from `.env`. The provider name in the YAML determines which key is used:
+API keys are read from `.env`. The `provider` value in the YAML determines which key is used:
 
-| `provider` value | Env var read | Notes |
+| `provider` | Env var | Notes |
 |---|---|---|
 | `openrouter` | `OPENROUTER_API_KEY` | Recommended — single key, all models |
 | `google` | `GOOGLE_API_KEY` | Google AI Studio direct |
@@ -188,41 +193,42 @@ API keys are read from `.env`. The provider name in the YAML determines which ke
 
 ---
 
-## Output Structure
+## Architecture
 
-Each run creates a timestamped directory under `experiments/`:
+The key design principle is **YAML-driven memory**: the agent's behavior is shaped entirely by declarative definition files — no code changes are required to switch memory strategies, models, or agent configurations.
+
+Each acting agent (Planner, Analyst, ActionChooser) is defined by:
+
+| File | Purpose |
+|---|---|
+| `core.yaml` | Agent type, tool flags, system message |
+| `initial_prompt.yaml` | Per-step prompt template |
+| `persistent_knowledge.yaml` | Static domain knowledge (action glossary, fixed heuristics) |
+| `reflection_knowledge.yaml` | **Dynamically evolved** — rules or examples written by the learning agents |
+| `reflection_examples.yaml` | Learned few-shot examples (examples/mixed strategy only) |
+
+The learning agents (Reflector, Exemplifier) analyze failed trajectories and write new entries into `reflection_knowledge.yaml` / `reflection_examples.yaml` of the acting agents. These files are re-injected into the system prompt at the start of every new attempt, so each restart begins with the accumulated knowledge from prior failures.
+
+---
+
+## Output Structure
 
 ```
 experiments/forge_experiment_rules_20260426_120000/
 ├── workspaces/
 │   ├── instance_0/
-│   │   ├── definitions/          # Evolved memory YAML files (snapshot of final state)
+│   │   ├── definitions/          # Snapshot of evolved memory at end of training
 │   │   └── logs/
 │   │       ├── runs/learning/    # Per-attempt learning logs
 │   │       └── runs/evaluating/  # Post-training evaluation logs
 │   ├── instance_1/
 │   └── ...
 └── aggregated_logs/
-    ├── instance_0/               # Copied logs for analysis
+    ├── instance_0/
     ├── ...
-    ├── summary.md                # Per-instance results table
-    ├── evaluation_report.md      # Aggregated evaluation scores
-    └── incremental_summary.md    # Stage-by-stage progress (FORGE mode)
-```
-
-### Learned memory
-
-At the end of training, each instance's evolved knowledge lives in its `definitions/` directory — the same YAML files that were injected into the agent's prompt. For example:
-
-```
-instance_0/definitions/
-├── planner/
-│   ├── reflection_knowledge.yaml  # Generated rules/examples for the Planner
-│   └── ...
-├── action_chooser/
-│   └── reflection_knowledge.yaml
-└── analyst/
-    └── reflection_knowledge.yaml
+    ├── summary.md
+    ├── evaluation_report.md
+    └── incremental_summary.md
 ```
 
 ---
@@ -230,6 +236,11 @@ instance_0/definitions/
 ## Environment: CybORG CAGE-2
 
 FORGE is evaluated on [CybORG CAGE-2](https://github.com/cage-challenge/cage-challenge-2) — a simulated network-defense environment (13-host enterprise network, 30-step horizon, automated B-line red attacker). The Dockerfile automatically installs and patches the necessary data files.
+
 ---
 
+## License
 
+This artifact is released under the **Apache License 2.0** — see [`LICENSE`](LICENSE) for the full text.
+
+The CybORG CAGE-2 environment is subject to its own license; see the [CybORG repository](https://github.com/cage-challenge/cage-challenge-2) for details.
