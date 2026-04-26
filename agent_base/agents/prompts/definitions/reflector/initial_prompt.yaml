@@ -1,0 +1,29 @@
+prompt:
+  opening: |
+    You are analyzing a failure in a multi-agent system.
+    Analyze the trajectories of agents {agents_to_improve}. Identify where the agents went wrong. Identify what mistakes lead to the failure.
+    
+    FAILURE CONTEXT:
+    Failed Step: {failed_step} 
+    Reward: {reward} (Threshold: {reward_threshold})
+    
+    AGENTS TO IMPROVE:
+    {agents_to_improve}
+    
+    CURRENT RULES (Do not duplicate these):
+    {current_rules_list}
+    
+    FAILED TRAJECTORIES:
+    {trajectories}
+    
+  closing: |
+    Construct targeted heuristics in "when X, then do Y" format that would prevent this failure.
+
+    Add and/or remove rules as needed. Each agent can have {max_reflection_rules} rules at most.
+
+    If existing rules are misleading or contradictory, list their indices in 'delete' for removal.
+    
+    Provide your response in the specified JSON format.
+
+    USER_QUESTION:
+    What rules would have prevented the failure?

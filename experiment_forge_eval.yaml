@@ -1,0 +1,38 @@
+
+experiment_name: "forge_experiment_rules"
+# experiment_name: empty_grok-4-fast
+
+num_instances: 10
+max_parallel_workers: 10
+num_evaluation_runs: 2  # Number of evaluation runs after learning
+
+incremental:
+  enabled: true
+  stages: 6                    # Number of learning stages
+  transfer_strategy: "best"    # "best" or "individual"
+  graduation_threshold: -15
+
+# Agent Configuration (passed to run_cyborg_coordinator.py)
+agent_config:
+  steps: 30
+  provider: "openrouter"
+  model: "google/gemini-2.5-flash-lite"
+  #model: "x-ai/grok-4-fast"
+  #model: "meta-llama/llama-4-maverick"
+  # model: "qwen/qwen3-235b-a22b-2507"
+
+  learning_strategy: "rules"    # Options: "rules", "examples", "mixed"
+  
+  continual_learning: true
+  reward_threshold: -1.1
+  max_attempts: 5
+  success_attempts: 5
+  agents_to_improve: ["action_chooser", "analyst", "planner"]  # List of agents to improve
+  helper_agents: []  # Agents to use as context
+  max_reflection_rules: 100
+  max_reflection_examples: 50
+
+# Granular LLM overrides (optional)
+# reflector_provider: "google"
+# reflector_model: "gemini-1.5-pro"
+

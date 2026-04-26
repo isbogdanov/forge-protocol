@@ -1,0 +1,29 @@
+prompt:
+  opening: |
+    You are analyzing a failure in a multi-agent system.
+    Analyze the trajectories of agents {agents_to_improve}. Identify where the agents went wrong. Identify whar mitakes lead to the failure.
+    
+    FAILURE CONTEXT:
+    Failed Step: {failed_step} 
+    Reward: {reward} (Threshold: {reward_threshold})
+    
+    AGENTS TO IMPROVE:
+    {agents_to_improve}
+    
+    CURRENT EXAMPLES (Do not duplicate these names):
+    {current_examples_list}
+    
+    FAILED TRAJECTORIES:
+    {trajectories}
+    
+  closing: |
+    Construct "Gold Standard" examples that show the CORRECT behavior for the specific situation encountered.
+
+    Add and/or remove examples as needed. Each agent can have {max_reflection_examples} examples at most.
+
+    If existing examples are misleading or contradictory, list their names in 'delete_names' for removal.
+    
+    Provide your response in the specified JSON format.
+
+    USER_QUESTION:
+    What is the correct version/version of the trajectory or its parts that would have prevented the failure?
