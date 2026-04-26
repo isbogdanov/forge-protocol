@@ -1,7 +1,8 @@
-# FORGE — Artifact
+# FORGE — Reproducibility Artifact
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
+Artifact for the ACM CAIS 2026 paper:
 > **FORGE: Self-Evolving Agent Memory With No Weight Updates via Population Broadcast**
 
 This repository contains the full agent implementation, experiment runner, and YAML configuration files needed to run FORGE — a staged, population-based protocol that evolves prompt-injected natural-language memory for hierarchical ReAct agents, with no gradient updates and no stronger teacher model.
