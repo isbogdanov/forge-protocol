@@ -7,6 +7,10 @@ Artifact for the ACM CAIS 2026 paper:
 
 This repository contains the full agent implementation, experiment runner, and YAML configuration files needed to run FORGE — a staged, population-based protocol that evolves prompt-injected natural-language memory for hierarchical ReAct agents, with no gradient updates and no stronger teacher model.
 
+## Archived Artifact
+
+Archived artifact: https://doi.org/10.5281/zenodo.19907612
+Development repository: https://github.com/isbogdanov/forge-protocol
 ---
 
 ## Overview
@@ -192,6 +196,8 @@ API keys are read from `.env`. The `provider` value in the YAML determines which
 | `openai` | `OPENAI_API_KEY` | OpenAI direct |
 | `groq` | `GROQ_API_KEY` | Groq inference |
 
+> Full FORGE reproduction requires paid LLM API calls and may be expensive. 
+
 ---
 
 ## Architecture
@@ -256,7 +262,7 @@ The learning agents (Reflector, Exemplifier) analyze failed trajectories and wri
 
 ---
 
-> **Data availability.** The complete episode logs collected for the paper (raw console logs, token usage, per-step reward traces, and evolved memory artifacts across all experiments and evaluated episodes) are not included in this repository due to size. They are available upon request from the authors.
+> **Data availability.** The complete episode logs collected for the paper (raw console logs, token usage, per-step reward traces, and evolved memory artifacts across all experiments and evaluated episodes) are not included in this repository due to size. They may be available upon request from the authors.
 
 ---
 

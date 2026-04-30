@@ -25,8 +25,8 @@ agent_config:
   
   continual_learning: true
   reward_threshold: -1.1
-  max_attempts: 5
-  success_attempts: 5
+  max_attempts: 3
+  success_attempts: 3
   agents_to_improve: ["action_chooser", "analyst", "planner"]  # List of agents to improve
   helper_agents: []  # Agents to use as context
   max_reflection_rules: 100
