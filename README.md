@@ -141,8 +141,8 @@ agent_config:
   learning_strategy: "rules"     # Memory representation: "rules" | "examples" | "mixed"
   continual_learning: true       # Enable the inner learning loop
   reward_threshold: -1.1         # Per-step reward below which reflection is triggered
-  max_attempts: 5                # Max learning attempts per stage per instance
-  success_attempts: 5            # Successful attempts required to end a stage early
+  max_attempts: 3                # Max learning attempts per stage per instance
+  success_attempts: 3            # Successful attempts required to end a stage early
   agents_to_improve: ["action_chooser", "analyst", "planner"]
   max_reflection_rules: 100      # Max rules stored per agent
   max_reflection_examples: 50    # Max examples stored per agent (examples/mixed only)
