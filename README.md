@@ -102,7 +102,7 @@ Installs all Python dependencies and patches the CybORG CAGE-2 data files. Takes
 ### 2. Run an experiment
 
 ```bash
-python run_experiment.py experiment_forge_eval.yaml
+python run_experiment.py --config experiment_forge_eval.yaml
 ```
 
 Output is written to `experiments/<name>_<timestamp>/aggregated_logs/`:
