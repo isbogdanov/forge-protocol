@@ -11,6 +11,7 @@ This repository contains the full agent implementation, experiment runner, and Y
 
 Archived artifact: https://doi.org/10.5281/zenodo.19907612
 Development repository: https://github.com/isbogdanov/forge-protocol
+
 ---
 
 ## Overview
